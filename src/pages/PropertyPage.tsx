@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAppContext } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import LeafletMap from "@/components/LeafletMap";
 import LankaPayModal from "@/components/LankaPayModal";
 import { Property } from "@/types/pearl-hub";
@@ -7,6 +8,7 @@ import InquiryModal from "@/components/InquiryModal";
 import TrustBanner from "@/components/TrustBanner";
 import ShareButtons from "@/components/ShareButtons";
 import ComparisonTool from "@/components/ComparisonTool";
+import ImageUpload from "@/components/ImageUpload";
 
 const formatPrice = (p: number) => p >= 1000000 ? `Rs. ${(p / 1000000).toFixed(1)}M` : `Rs. ${p.toLocaleString()}`;
 
