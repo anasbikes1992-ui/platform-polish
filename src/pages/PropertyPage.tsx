@@ -21,7 +21,7 @@ interface WantedListing {
 }
 
 const PropertyPage = () => {
-  const { data, currentUser, showToast, favorites, toggleFavorite } = useAppContext();
+  const { data, currentUser, showToast, favorites, toggleFavorite, addRecentlyViewed } = useAppContext();
   const [filter, setFilter] = useState({ type: "all", minPrice: "", maxPrice: "", beds: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [selectedProp, setSelectedProp] = useState<Property | null>(null);
