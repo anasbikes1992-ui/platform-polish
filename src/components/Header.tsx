@@ -75,6 +75,11 @@ const Header = () => {
         {/* Mobile menu button */}
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-pearl text-xl ml-auto">☰</button>
 
+        {/* Global Search */}
+        <form onSubmit={e => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem("q") as HTMLInputElement)?.value; if (q?.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`); }} className="hidden md:flex items-center">
+          <input name="q" placeholder="🔍 Search…" className="bg-white/[0.08] border border-white/15 text-pearl placeholder:text-fog rounded-md px-3 py-1.5 text-xs w-40 focus:w-56 transition-all outline-none focus:border-primary/40" />
+        </form>
+
         {/* Controls */}
         <div className="hidden md:flex items-center gap-2.5 flex-shrink-0">
           {/* Notifications */}
