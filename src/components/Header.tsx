@@ -11,6 +11,21 @@ const Header = () => {
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pearl-hub-theme");
+      if (stored) return stored === "dark";
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("pearl-hub-theme", next ? "dark" : "light");
+  };
 
   const navItems = [
     { path: "/property", label: "Property", icon: "🏘️" },
