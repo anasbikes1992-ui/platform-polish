@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
-import { useNavigate as useNav } from "react-router-dom";
 import LeafletMap from "@/components/LeafletMap";
 import heroPropertyImg from "@/assets/hero-property.jpg";
 
