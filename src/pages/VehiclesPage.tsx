@@ -217,7 +217,9 @@ const VehiclesPage = () => {
                   if (!form.startDate || !form.endDate) { showToast("Please select dates.", "error"); return; }
                   if (!form.agreedToTerms) { showToast("Please agree to the Terms & Conditions.", "error"); return; }
                   setShowPayment(true);
-                }} className="w-full bg-ruby hover:bg-ruby-light text-pearl py-3 rounded-lg font-bold transition-all">💳 Book & Pay Rs. {grandTotal.toLocaleString()} via LankaPay</button>
+                }} className="w-full bg-ruby hover:bg-ruby-light text-pearl py-3 rounded-lg font-bold transition-all mb-2">💳 Book & Pay Rs. {grandTotal.toLocaleString()} via LankaPay</button>
+                <button onClick={() => setShowInquiry(true)}
+                  className="w-full border border-ruby text-ruby py-2.5 rounded-lg font-bold transition-all hover:bg-ruby/5">📩 Enquire First</button>
               </div>
             </motion.div>
           </div>
