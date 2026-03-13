@@ -9,7 +9,7 @@ import TrustBanner from "@/components/TrustBanner";
 import { Vehicle } from "@/types/pearl-hub";
 
 const VehiclesPage = () => {
-  const { data, showToast } = useAppContext();
+  const { data, showToast, addRecentlyViewed } = useAppContext();
   const navigate = useNavigate();
   const [filter, setFilter] = useState({ type: "all", driver: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
