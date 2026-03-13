@@ -90,7 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   return (
-    <AppContext.Provider value={{ data, currentUser, setCurrentUser, showToast, toast, clearToast, favorites, toggleFavorite, notifications, addNotification, markNotificationRead }}>
+    <AppContext.Provider value={{ data, currentUser, setCurrentUser, showToast, toast, clearToast, favorites, toggleFavorite, notifications, addNotification, markNotificationRead, recentlyViewed, addRecentlyViewed }}>
       {children}
     </AppContext.Provider>
   );
