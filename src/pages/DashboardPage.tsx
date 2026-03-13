@@ -509,4 +509,64 @@ const FeeCard = ({ icon, category, rate, basis }: { icon: string; category: stri
   </div>
 );
 
+const EnquiriesSection = ({ userId }: { userId?: string }) => {
+  const [enquiries, setEnquiries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) { setLoading(false); return; }
+    const fetchEnquiries = async () => {
+      const { data } = await supabase.from("inquiries").select("*").eq("owner_id", userId).order("created_at", { ascending: false });
+      setEnquiries(data || []);
+      setLoading(false);
+    };
+    fetchEnquiries();
+  }, [userId]);
+
+  const markRead = async (id: string) => {
+    await supabase.from("inquiries").update({ status: "read" }).eq("id", id);
+    setEnquiries(prev => prev.map(e => e.id === id ? { ...e, status: "read" } : e));
+  };
+
+  const typeIcons: Record<string, string> = { property: "🏠", stay: "🏨", vehicle: "🚗", event: "🎭" };
+
+  return (
+    <div>
+      <h2 className="text-2xl mb-6">📩 Enquiries</h2>
+      {loading ? (
+        <p className="text-muted-foreground">Loading enquiries…</p>
+      ) : enquiries.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <div className="text-5xl mb-3">📩</div>
+          <h3>No enquiries yet</h3>
+          <p className="mt-2">When customers enquire about your listings, they'll appear here.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {enquiries.map(e => (
+            <div key={e.id} className={`bg-card rounded-xl p-4 border transition-all ${e.status === "new" ? "border-primary shadow-sm" : "border-border"}`}>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center text-xl flex-shrink-0">{typeIcons[e.listing_type] || "📩"}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-sm">{e.sender_name}</span>
+                    {e.status === "new" && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-gold-dark">NEW</span>}
+                    <span className="text-[11px] text-muted-foreground ml-auto">{new Date(e.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="text-[13px] text-muted-foreground mb-1">📧 {e.sender_email} {e.sender_phone && `• 📱 ${e.sender_phone}`}</div>
+                  <div className="text-xs text-muted-foreground mb-1 capitalize">🏷️ {e.listing_type} • ID: {e.listing_id}</div>
+                  {e.message && <p className="text-sm bg-background rounded-lg p-2.5 mt-2">{e.message}</p>}
+                </div>
+                {e.status === "new" && (
+                  <button onClick={() => markRead(e.id)} className="text-xs font-semibold text-primary hover:underline flex-shrink-0">Mark Read</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default DashboardPage;
