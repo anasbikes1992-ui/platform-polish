@@ -2,10 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LankaPayModal from "@/components/LankaPayModal";
+import InquiryModal from "@/components/InquiryModal";
+import TrustBanner from "@/components/TrustBanner";
 import { PearlEvent } from "@/types/pearl-hub";
 
 const EventsPage = () => {
-  const { data, showToast } = useAppContext();
+  const { data, showToast, addRecentlyViewed } = useAppContext();
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<PearlEvent | null>(null);
   const [ticketType, setTicketType] = useState("standard");
@@ -15,6 +17,7 @@ const EventsPage = () => {
   const [seatConfig, setSeatConfig] = useState({ vipRows: 2, premiumRows: 4 });
   const [showPayment, setShowPayment] = useState(false);
   const [gateTime, setGateTime] = useState("18:00");
+  const [showInquiry, setShowInquiry] = useState(false);
 
   const eventCategories = [{ id: "all", label: "All Events" }, { id: "cinema", label: "🎬 Cinema" }, { id: "concert", label: "🎵 Concerts" }, { id: "sports", label: "🏏 Sports" }];
 
@@ -44,6 +47,12 @@ const EventsPage = () => {
           <p className="text-pearl/75 mt-1.5">Cinema • Concerts • Sports • QR-Coded Tickets</p>
         </div>
       </div>
+      <TrustBanner stats={[
+        { value: "540+", label: "Events", icon: "🎭" },
+        { value: "QR Coded", label: "Secure Tickets", icon: "🎫" },
+        { value: "4.8★", label: "Avg Rating", icon: "⭐" },
+        { value: "50K+", label: "Tickets Sold", icon: "🎟️" },
+      ]} />
 
       <div className="bg-card border-b border-border py-3">
         <div className="container flex gap-2 flex-wrap">
@@ -61,7 +70,7 @@ const EventsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((evt, i) => (
             <motion.div key={evt.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              onClick={() => { setSelected(evt); setStep(1); setSelectedSeats([]); setQuantity(1); setTicketType("standard"); setGateTime("18:00"); setSeatConfig({ vipRows: Math.max(1, Math.floor(evt.seats.rows * 0.1)), premiumRows: Math.max(1, Math.floor(evt.seats.rows * 0.2)) }); }}
+              onClick={() => { setSelected(evt); setStep(1); setSelectedSeats([]); setQuantity(1); setTicketType("standard"); setGateTime("18:00"); setSeatConfig({ vipRows: Math.max(1, Math.floor(evt.seats.rows * 0.1)), premiumRows: Math.max(1, Math.floor(evt.seats.rows * 0.2)) }); addRecentlyViewed({ id: evt.id, title: evt.title, type: "event", price: evt.prices.standard, image: evt.image, location: evt.venue }); }}
               className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer border border-border flex">
               <div className="w-28 flex items-center justify-center text-5xl flex-shrink-0" style={{ background: "linear-gradient(135deg, hsl(256 57% 29% / 0.1), transparent)" }}>{evt.image}</div>
               <div className="p-4 flex-1">
@@ -78,6 +87,8 @@ const EventsPage = () => {
                     <span className="font-display text-lg font-bold text-indigo">Rs. {evt.prices.standard.toLocaleString()}</span>
                   </div>
                   <span className="text-xs font-bold px-3 py-1.5 rounded-md text-pearl" style={{ background: "hsl(256 57% 29%)" }}>Book Now</span>
+                  <button onClick={(e) => { e.stopPropagation(); setSelected(evt); setShowInquiry(true); }}
+                    className="text-xs font-bold px-3 py-1.5 rounded-md border border-indigo text-indigo hover:bg-indigo/5">📩</button>
                 </div>
               </div>
             </motion.div>
@@ -263,6 +274,16 @@ const EventsPage = () => {
         description={`Event Tickets: ${selected?.title} – ${selectedSeats.length} tickets`}
         onSuccess={() => { showToast("🎫 Tickets booked! QR codes sent to your email.", "success"); setSelected(null); setShowPayment(false); }}
       />
+
+      {selected && (
+        <InquiryModal
+          open={showInquiry}
+          onClose={() => setShowInquiry(false)}
+          listingId={selected.id}
+          listingType="event"
+          listingTitle={selected.title}
+        />
+      )}
     </div>
   );
 };

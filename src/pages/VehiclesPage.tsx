@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LeafletMap from "@/components/LeafletMap";
 import LankaPayModal from "@/components/LankaPayModal";
+import InquiryModal from "@/components/InquiryModal";
+import TrustBanner from "@/components/TrustBanner";
 import { Vehicle } from "@/types/pearl-hub";
 
 const VehiclesPage = () => {
-  const { data, showToast } = useAppContext();
+  const { data, showToast, addRecentlyViewed } = useAppContext();
   const navigate = useNavigate();
   const [filter, setFilter] = useState({ type: "all", driver: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
@@ -15,6 +17,7 @@ const VehiclesPage = () => {
   const [form, setForm] = useState({ startDate: "", endDate: "", pickupTime: "09:00", returnTime: "09:00", driver: "no", agreedToTerms: false });
   const [showTerms, setShowTerms] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [showInquiry, setShowInquiry] = useState(false);
 
   const vehicleTypes = [{ id: "all", label: "All" }, { id: "car", label: "Cars" }, { id: "van", label: "Vans" }, { id: "jeep", label: "Jeeps" }, { id: "bus", label: "Buses" }, { id: "luxury_coach", label: "Luxury Coach" }];
 
@@ -48,6 +51,12 @@ const VehiclesPage = () => {
           <button onClick={() => navigate("/terms")} className="bg-white/10 border border-white/20 text-pearl px-4 py-2 rounded-lg text-xs font-bold">📄 Supplier T&C</button>
         </div>
       </div>
+      <TrustBanner stats={[
+        { value: "1,820+", label: "Vehicles", icon: "🚗" },
+        { value: "100km", label: "Daily Included", icon: "📏" },
+        { value: "4.9★", label: "Avg Rating", icon: "⭐" },
+        { value: "24/7", label: "Roadside Help", icon: "🛡️" },
+      ]} />
 
       <div className="bg-card border-b border-border py-3">
         <div className="container flex gap-2 items-center flex-wrap">
@@ -74,7 +83,7 @@ const VehiclesPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((v, i) => (
               <motion.div key={v.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                onClick={() => { setSelected(v); setForm({ startDate: "", endDate: "", pickupTime: "09:00", returnTime: "09:00", driver: v.driver === "included" ? "yes" : "no", agreedToTerms: false }); }}
+                onClick={() => { setSelected(v); setForm({ startDate: "", endDate: "", pickupTime: "09:00", returnTime: "09:00", driver: v.driver === "included" ? "yes" : "no", agreedToTerms: false }); addRecentlyViewed({ id: v.id, title: `${v.make} ${v.model}`, type: "vehicle", price: v.price, image: v.image, location: v.location }); }}
                 className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border">
                 <div className="h-36 bg-gradient-to-br from-ruby/10 to-ruby/[0.03] flex items-center justify-center text-5xl relative">
                   {v.image}
@@ -208,7 +217,9 @@ const VehiclesPage = () => {
                   if (!form.startDate || !form.endDate) { showToast("Please select dates.", "error"); return; }
                   if (!form.agreedToTerms) { showToast("Please agree to the Terms & Conditions.", "error"); return; }
                   setShowPayment(true);
-                }} className="w-full bg-ruby hover:bg-ruby-light text-pearl py-3 rounded-lg font-bold transition-all">💳 Book & Pay Rs. {grandTotal.toLocaleString()} via LankaPay</button>
+                }} className="w-full bg-ruby hover:bg-ruby-light text-pearl py-3 rounded-lg font-bold transition-all mb-2">💳 Book & Pay Rs. {grandTotal.toLocaleString()} via LankaPay</button>
+                <button onClick={() => setShowInquiry(true)}
+                  className="w-full border border-ruby text-ruby py-2.5 rounded-lg font-bold transition-all hover:bg-ruby/5">📩 Enquire First</button>
               </div>
             </motion.div>
           </div>
@@ -247,6 +258,16 @@ const VehiclesPage = () => {
         description={`Vehicle Rental: ${selected?.make} ${selected?.model} – ${days} days`}
         onSuccess={() => { showToast("🚗 Vehicle booked successfully! Confirmation sent to your email.", "success"); setSelected(null); setShowPayment(false); }}
       />
+
+      {selected && (
+        <InquiryModal
+          open={showInquiry}
+          onClose={() => setShowInquiry(false)}
+          listingId={selected.id}
+          listingType="vehicle"
+          listingTitle={`${selected.make} ${selected.model}`}
+        />
+      )}
     </div>
   );
 };

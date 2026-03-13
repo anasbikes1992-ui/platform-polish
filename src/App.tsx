@@ -24,6 +24,7 @@ const AuthPage = lazy(() => import("@/pages/AuthPage"));
 const SearchResultsPage = lazy(() => import("@/pages/SearchResultsPage"));
 const SocialPage = lazy(() => import("@/pages/SocialPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const ForBusinessPage = lazy(() => import("@/pages/ForBusinessPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const AppLayout = () => (
         <Route path="/social" element={<SocialPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<TermsPage />} />
+        <Route path="/for-business" element={<ForBusinessPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

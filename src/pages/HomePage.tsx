@@ -6,7 +6,7 @@ import LeafletMap from "@/components/LeafletMap";
 import heroPropertyImg from "@/assets/hero-property.jpg";
 
 const HomePage = () => {
-  const { data } = useAppContext();
+  const { data, recentlyViewed } = useAppContext();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -161,6 +161,29 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Recently Viewed */}
+      {recentlyViewed.length > 0 && (
+        <section className="py-12">
+          <div className="container">
+            <h2 className="text-2xl mb-2">Continue Where You Left Off</h2>
+            <p className="text-muted-foreground text-sm mb-6">Your recently viewed listings</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {recentlyViewed.slice(0, 5).map(item => (
+                <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  onClick={() => navigate(`/${item.type === "stay" ? "stays" : item.type === "event" ? "events" : item.type === "vehicle" ? "vehicles" : "property"}`)}
+                  className="bg-card rounded-xl p-4 border border-border cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div className="text-3xl mb-2">{item.image}</div>
+                  <div className="font-bold text-sm truncate">{item.title}</div>
+                  <div className="text-xs text-muted-foreground truncate">📍 {item.location}</div>
+                  {item.price && <div className="text-sm font-bold text-primary mt-1">Rs. {item.price.toLocaleString()}</div>}
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-gold-dark capitalize mt-1">{item.type}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Trust */}
       <section className="py-16 bg-card">

@@ -3,6 +3,8 @@ import { useAppContext } from "@/context/AppContext";
 import LeafletMap from "@/components/LeafletMap";
 import LankaPayModal from "@/components/LankaPayModal";
 import { Property } from "@/types/pearl-hub";
+import InquiryModal from "@/components/InquiryModal";
+import TrustBanner from "@/components/TrustBanner";
 
 const formatPrice = (p: number) => p >= 1000000 ? `Rs. ${(p / 1000000).toFixed(1)}M` : `Rs. ${p.toLocaleString()}`;
 
@@ -19,7 +21,7 @@ interface WantedListing {
 }
 
 const PropertyPage = () => {
-  const { data, currentUser, showToast, favorites, toggleFavorite } = useAppContext();
+  const { data, currentUser, showToast, favorites, toggleFavorite, addRecentlyViewed } = useAppContext();
   const [filter, setFilter] = useState({ type: "all", minPrice: "", maxPrice: "", beds: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [selectedProp, setSelectedProp] = useState<Property | null>(null);
@@ -28,6 +30,7 @@ const PropertyPage = () => {
   const [showWantedModal, setShowWantedModal] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentContext, setPaymentContext] = useState<{ amount: number; description: string; onSuccess: () => void }>({ amount: 0, description: "", onSuccess: () => {} });
+  const [showInquiry, setShowInquiry] = useState(false);
 
   const [wantedListings] = useState<WantedListing[]>([
     { id: "W001", title: "Looking for 3BR House in Colombo 5/7", location: "Colombo 05 or 07", budget: "Rs. 50M – 70M", beds: 3, area: "2,500+ sq.ft", description: "Family looking for a spacious 3-bedroom house in a quiet residential area with parking and garden.", contact: "Verified Buyer", date: "2024-03-10" },
@@ -85,6 +88,12 @@ const PropertyPage = () => {
           </button>
         </div>
       </div>
+      <TrustBanner stats={[
+        { value: "6,240+", label: "Properties", icon: "🏘️" },
+        { value: "890+", label: "Verified Owners", icon: "✓" },
+        { value: "Rs. 3.9M", label: "Transacted", icon: "💰" },
+        { value: "4.8★", label: "Avg Rating", icon: "⭐" },
+      ]} />
 
       {activeTab === "listings" && (
         <>
@@ -117,7 +126,7 @@ const PropertyPage = () => {
             ) : (
               <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-4"}>
                 {filtered.map(prop => (
-                  <div key={prop.id} onClick={() => setSelectedProp(prop)} className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border">
+                  <div key={prop.id} onClick={() => { setSelectedProp(prop); addRecentlyViewed({ id: prop.id, title: prop.title, type: "property", price: prop.price, image: prop.image, location: prop.location }); }} className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border">
                     {viewMode === "grid" ? (
                       <>
                         <div className="h-44 bg-gradient-to-br from-emerald/10 to-emerald/[0.03] flex items-center justify-center text-6xl relative">
@@ -268,7 +277,7 @@ const PropertyPage = () => {
               <LeafletMap markers={[{ lat: selectedProp.lat, lng: selectedProp.lng, title: selectedProp.title, location: selectedProp.location, price: selectedProp.price, emoji: selectedProp.image, type: "property" }]} center={[selectedProp.lat, selectedProp.lng]} zoom={14} height="250px" />
               {currentUser === "customer" && (
                 <div className="flex gap-2.5 mt-5">
-                  <button onClick={() => { showToast("Enquiry sent! The owner/broker will contact you shortly.", "success"); setSelectedProp(null); }}
+                  <button onClick={() => setShowInquiry(true)}
                     className="flex-1 bg-emerald hover:bg-emerald-light text-accent-foreground py-3 rounded-lg font-bold transition-all">📞 Enquire Now</button>
                   <button onClick={() => toggleFavorite(selectedProp.id)}
                     className="px-6 py-3 rounded-lg font-bold border border-input bg-card hover:bg-background transition-all">
@@ -382,6 +391,16 @@ const PropertyPage = () => {
         description={paymentContext.description}
         onSuccess={paymentContext.onSuccess}
       />
+
+      {selectedProp && (
+        <InquiryModal
+          open={showInquiry}
+          onClose={() => setShowInquiry(false)}
+          listingId={selectedProp.id}
+          listingType="property"
+          listingTitle={selectedProp.title}
+        />
+      )}
     </div>
   );
 };

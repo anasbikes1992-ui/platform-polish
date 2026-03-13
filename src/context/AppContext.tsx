@@ -2,6 +2,16 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import { AppData, UserRole } from "@/types/pearl-hub";
 import { INITIAL_DATA } from "@/data/pearl-hub-data";
 
+interface RecentlyViewed {
+  id: string;
+  title: string;
+  type: "property" | "stay" | "vehicle" | "event";
+  price?: number;
+  image: string;
+  location: string;
+  viewedAt: number;
+}
+
 interface AppContextType {
   data: AppData;
   currentUser: UserRole;
@@ -14,6 +24,8 @@ interface AppContextType {
   notifications: Notification[];
   addNotification: (title: string, message: string) => void;
   markNotificationRead: (id: number) => void;
+  recentlyViewed: RecentlyViewed[];
+  addRecentlyViewed: (item: Omit<RecentlyViewed, "viewedAt">) => void;
 }
 
 interface Notification {
@@ -43,6 +55,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     { id: 3, title: "Special Offer", message: "Get 10% off on your first vehicle rental booking.", read: true, time: "1 day ago" },
   ]);
 
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewed[]>(() => {
+    try {
+      const stored = localStorage.getItem("pearl-hub-recent");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
   const showToast = useCallback((message: string, type: "success" | "error" | "warning" | "info" = "success") => {
     setToast({ message, type, id: Date.now() });
   }, []);
@@ -61,8 +80,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   }, []);
 
+  const addRecentlyViewed = useCallback((item: Omit<RecentlyViewed, "viewedAt">) => {
+    setRecentlyViewed(prev => {
+      const filtered = prev.filter(r => r.id !== item.id);
+      const updated = [{ ...item, viewedAt: Date.now() }, ...filtered].slice(0, 10);
+      localStorage.setItem("pearl-hub-recent", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   return (
-    <AppContext.Provider value={{ data, currentUser, setCurrentUser, showToast, toast, clearToast, favorites, toggleFavorite, notifications, addNotification, markNotificationRead }}>
+    <AppContext.Provider value={{ data, currentUser, setCurrentUser, showToast, toast, clearToast, favorites, toggleFavorite, notifications, addNotification, markNotificationRead, recentlyViewed, addRecentlyViewed }}>
       {children}
     </AppContext.Provider>
   );

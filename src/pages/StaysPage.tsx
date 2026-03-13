@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LeafletMap from "@/components/LeafletMap";
 import LankaPayModal from "@/components/LankaPayModal";
+import InquiryModal from "@/components/InquiryModal";
+import TrustBanner from "@/components/TrustBanner";
 import { Stay } from "@/types/pearl-hub";
 
 const StaysPage = () => {
-  const { data, showToast } = useAppContext();
+  const { data, showToast, addRecentlyViewed } = useAppContext();
   const [filter, setFilter] = useState({ type: "all", maxPrice: "", location: "", minRating: "0", amenity: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [selectedStay, setSelectedStay] = useState<Stay | null>(null);
@@ -18,6 +20,7 @@ const StaysPage = () => {
   const [guests, setGuests] = useState(2);
   const [specialRequests, setSpecialRequests] = useState("");
   const [showPayment, setShowPayment] = useState(false);
+  const [showInquiry, setShowInquiry] = useState(false);
 
   const stayTypes = [{ id: "all", label: "All" }, { id: "star_hotel", label: "Star Hotels" }, { id: "villa", label: "Villas" }, { id: "guest_house", label: "Guest Houses" }, { id: "hostel", label: "Hostels" }, { id: "lodge", label: "Lodges" }];
 
@@ -63,6 +66,12 @@ const StaysPage = () => {
           <p className="text-pearl/75 mt-1.5">Hotels • Villas • Guest Houses • Hostels • Sri Lanka Tourism Board Approved</p>
         </div>
       </div>
+      <TrustBanner stats={[
+        { value: "3,180+", label: "Stays", icon: "🏨" },
+        { value: "340+", label: "STB Approved", icon: "✓" },
+        { value: "4.7★", label: "Avg Rating", icon: "⭐" },
+        { value: "98%", label: "Happy Guests", icon: "😊" },
+      ]} />
 
       <div className="bg-card border-b border-border py-3">
         <div className="container flex gap-2 items-center flex-wrap">
@@ -93,7 +102,7 @@ const StaysPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((stay, i) => (
               <motion.div key={stay.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                onClick={() => { setSelectedStay(stay); setRoomType("standard"); setGuests(2); setSpecialRequests(""); setCheckInTime("14:00"); setCheckOutTime("11:00"); }}
+                onClick={() => { setSelectedStay(stay); setRoomType("standard"); setGuests(2); setSpecialRequests(""); setCheckInTime("14:00"); setCheckOutTime("11:00"); addRecentlyViewed({ id: stay.id, title: stay.name, type: "stay", price: stay.pricePerNight, image: stay.image, location: stay.location }); }}
                 className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border">
                 <div className="h-40 bg-gradient-to-br from-sapphire/10 to-sapphire/[0.03] flex items-center justify-center text-6xl relative">
                   {stay.image}
@@ -202,7 +211,9 @@ const StaysPage = () => {
                     if (!checkIn || !checkOut) { showToast("Please select dates.", "error"); return; }
                     setShowPayment(true);
                   }}
-                    className="w-full bg-sapphire hover:bg-sapphire-light text-pearl py-3 rounded-lg font-bold transition-all text-center">💳 Book & Pay via LankaPay</button>
+                    className="w-full bg-sapphire hover:bg-sapphire-light text-pearl py-3 rounded-lg font-bold transition-all text-center mb-2">💳 Book & Pay via LankaPay</button>
+                  <button onClick={() => setShowInquiry(true)}
+                    className="w-full border border-sapphire text-sapphire py-2.5 rounded-lg font-bold transition-all text-center hover:bg-sapphire/5">📩 Enquire First</button>
                   <p className="text-[11px] text-muted-foreground text-center mt-2">Free cancellation up to 48 hours before check-in</p>
                 </div>
               </div>
@@ -218,6 +229,16 @@ const StaysPage = () => {
         description={`Stay at ${selectedStay?.name || ""} – ${nights} nights`}
         onSuccess={() => { showToast("🏨 Booking confirmed! Confirmation sent to your email.", "success"); setSelectedStay(null); setShowPayment(false); }}
       />
+
+      {selectedStay && (
+        <InquiryModal
+          open={showInquiry}
+          onClose={() => setShowInquiry(false)}
+          listingId={selectedStay.id}
+          listingType="stay"
+          listingTitle={selectedStay.name}
+        />
+      )}
     </div>
   );
 };
