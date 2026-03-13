@@ -3,6 +3,8 @@ import { useAppContext } from "@/context/AppContext";
 import LeafletMap from "@/components/LeafletMap";
 import LankaPayModal from "@/components/LankaPayModal";
 import { Property } from "@/types/pearl-hub";
+import InquiryModal from "@/components/InquiryModal";
+import TrustBanner from "@/components/TrustBanner";
 
 const formatPrice = (p: number) => p >= 1000000 ? `Rs. ${(p / 1000000).toFixed(1)}M` : `Rs. ${p.toLocaleString()}`;
 
