@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import RateManagement from "@/components/RateManagement";
 import LankaPayModal from "@/components/LankaPayModal";
