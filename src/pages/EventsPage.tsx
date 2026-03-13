@@ -7,7 +7,7 @@ import TrustBanner from "@/components/TrustBanner";
 import { PearlEvent } from "@/types/pearl-hub";
 
 const EventsPage = () => {
-  const { data, showToast } = useAppContext();
+  const { data, showToast, addRecentlyViewed } = useAppContext();
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<PearlEvent | null>(null);
   const [ticketType, setTicketType] = useState("standard");
