@@ -20,6 +20,7 @@ const StaysPage = () => {
   const [guests, setGuests] = useState(2);
   const [specialRequests, setSpecialRequests] = useState("");
   const [showPayment, setShowPayment] = useState(false);
+  const [showInquiry, setShowInquiry] = useState(false);
 
   const stayTypes = [{ id: "all", label: "All" }, { id: "star_hotel", label: "Star Hotels" }, { id: "villa", label: "Villas" }, { id: "guest_house", label: "Guest Houses" }, { id: "hostel", label: "Hostels" }, { id: "lodge", label: "Lodges" }];
 
