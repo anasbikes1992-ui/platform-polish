@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import RateManagement from "@/components/RateManagement";
 import LankaPayModal from "@/components/LankaPayModal";
+import ImageUpload from "@/components/ImageUpload";
 
 const DashboardPage = () => {
   const { data, currentUser, showToast } = useAppContext();
