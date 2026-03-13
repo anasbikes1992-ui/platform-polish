@@ -1,0 +1,140 @@
+import { useState } from "react";
+import { useAppContext } from "@/context/AppContext";
+import LeafletMap from "@/components/LeafletMap";
+import { Stay } from "@/types/pearl-hub";
+
+const StaysPage = () => {
+  const { data, showToast } = useAppContext();
+  const [filter, setFilter] = useState({ type: "all", maxPrice: "", location: "", minRating: "0" });
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [selectedStay, setSelectedStay] = useState<Stay | null>(null);
+  const [checkIn, setCheckIn] = useState(""); const [checkOut, setCheckOut] = useState(""); const [roomType, setRoomType] = useState("standard");
+
+  const stayTypes = [{ id: "all", label: "All" }, { id: "star_hotel", label: "Star Hotels" }, { id: "villa", label: "Villas" }, { id: "guest_house", label: "Guest Houses" }, { id: "hostel", label: "Hostels" }, { id: "lodge", label: "Lodges" }];
+
+  const filtered = data.stays.filter(s => {
+    if (filter.type !== "all" && s.type !== filter.type) return false;
+    if (filter.maxPrice && s.pricePerNight > parseInt(filter.maxPrice)) return false;
+    if (filter.location && !s.location.toLowerCase().includes(filter.location.toLowerCase())) return false;
+    if (s.rating < parseFloat(filter.minRating)) return false;
+    return true;
+  });
+
+  const mapMarkers = filtered.map(s => ({ lat: s.lat, lng: s.lng, title: s.name, location: s.location, price: s.pricePerNight, emoji: s.image, type: "stay" as const, rating: s.rating }));
+
+  const roomTypes: Record<string, { label: string; mult: number }> = { standard: { label: "Standard", mult: 1 }, deluxe: { label: "Deluxe", mult: 1.4 }, suite: { label: "Suite", mult: 2.2 }, penthouse: { label: "Penthouse", mult: 3.5 } };
+  const nights = checkIn && checkOut ? Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)) : 0;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="bg-gradient-to-br from-sapphire to-sapphire/70 py-10">
+        <div className="container">
+          <div className="inline-flex items-center gap-1.5 bg-white/15 text-pearl text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-2">🏨 Stays & Accommodation</div>
+          <h1 className="text-pearl text-3xl">Find Perfect Accommodation</h1>
+          <p className="text-pearl/75 mt-1.5">Hotels • Villas • Guest Houses • Hostels • Sri Lanka Tourism Board Approved</p>
+        </div>
+      </div>
+
+      <div className="bg-card border-b border-border py-3">
+        <div className="container flex gap-2 items-center flex-wrap">
+          {stayTypes.map(t => (
+            <button key={t.id} onClick={() => setFilter({...filter, type: t.id})}
+              className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium border transition-all ${filter.type === t.id ? "bg-sapphire text-pearl border-sapphire" : "bg-transparent text-muted-foreground border-input"}`}>{t.label}</button>
+          ))}
+          <div className="ml-auto flex gap-2">
+            <input value={filter.location} onChange={e => setFilter({...filter, location: e.target.value})} placeholder="📍 Location" className="rounded-md border border-input px-3 py-1.5 text-sm w-40" />
+            <button onClick={() => setViewMode(viewMode === "grid" ? "map" : "grid")}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-semibold border transition-all ${viewMode === "map" ? "bg-sapphire text-pearl border-sapphire" : "bg-transparent text-muted-foreground border-input"}`}>
+              {viewMode === "map" ? "⊞ Grid" : "🗺️ Map"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="container py-10">
+        {viewMode === "map" ? (
+          <LeafletMap markers={mapMarkers} center={[7.8731, 80.7718]} zoom={8} height="500px" />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(stay => (
+              <div key={stay.id} onClick={() => setSelectedStay(stay)} className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border">
+                <div className="h-40 bg-gradient-to-br from-sapphire/10 to-sapphire/[0.03] flex items-center justify-center text-6xl relative">
+                  {stay.image}
+                  {stay.approved && <span className="absolute top-2.5 right-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald/10 text-emerald">✓ STB Approved</span>}
+                  {stay.stars > 0 && <span className="absolute top-2.5 left-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/15 text-gold-dark">{stay.stars}⭐</span>}
+                </div>
+                <div className="p-4">
+                  <div className="font-display text-base font-bold mb-1">{stay.name}</div>
+                  <div className="text-[13px] text-muted-foreground mb-2">📍 {stay.location}</div>
+                  <div className="flex gap-1.5 mb-3 flex-wrap">
+                    {stay.amenities.slice(0, 3).map(a => <span key={a} className="inline-block px-2 py-0.5 bg-pearl-dark rounded text-[11px] font-medium text-muted-foreground">{a}</span>)}
+                    {stay.amenities.length > 3 && <span className="inline-block px-2 py-0.5 bg-pearl-dark rounded text-[11px] font-medium text-muted-foreground">+{stay.amenities.length - 3}</span>}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-[11px] text-muted-foreground">from </span>
+                      <span className="font-display text-xl font-bold text-sapphire">Rs. {stay.pricePerNight.toLocaleString()}</span>
+                      <span className="text-xs text-muted-foreground">/night</span>
+                    </div>
+                    <div className="flex items-center gap-1"><span className="text-primary">★</span><span className="font-bold text-sm">{stay.rating}</span></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Detail/Booking Modal */}
+      {selectedStay && (
+        <div className="fixed inset-0 bg-obsidian/75 z-[1000] flex items-center justify-center p-5 fade-in" onClick={() => setSelectedStay(null)}>
+          <div className="bg-card rounded-2xl max-w-[860px] w-full max-h-[90vh] overflow-y-auto fade-up" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-sapphire to-sapphire/70 px-7 py-6 flex justify-between">
+              <div>
+                <h2 className="text-pearl text-xl mb-1">{selectedStay.image} {selectedStay.name}</h2>
+                <p className="text-pearl/70 text-sm">📍 {selectedStay.location} • ★ {selectedStay.rating}</p>
+              </div>
+              <button onClick={() => setSelectedStay(null)} className="bg-white/15 border-none text-pearl w-9 h-9 rounded-full cursor-pointer">✕</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_300px]">
+              <div className="p-7 border-r border-border">
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">{selectedStay.description}</p>
+                <div className="flex gap-2 flex-wrap mb-5">{selectedStay.amenities.map(a => <span key={a} className="inline-block px-2 py-0.5 bg-pearl-dark rounded text-[11px] font-medium text-muted-foreground">{a}</span>)}</div>
+                <h4 className="mb-3 text-sm">Room Types</h4>
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  {Object.entries(roomTypes).map(([key, room]) => (
+                    <div key={key} onClick={() => setRoomType(key)}
+                      className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${roomType === key ? "border-sapphire bg-sapphire/5" : "border-border"}`}>
+                      <div className="font-semibold text-[13px]">{room.label}</div>
+                      <div className="text-[13px] text-sapphire font-bold">Rs. {(selectedStay.pricePerNight * room.mult).toLocaleString()}/night</div>
+                    </div>
+                  ))}
+                </div>
+                <LeafletMap markers={[{ lat: selectedStay.lat, lng: selectedStay.lng, title: selectedStay.name, location: selectedStay.location, price: selectedStay.pricePerNight, emoji: selectedStay.image, type: "stay" }]} center={[selectedStay.lat, selectedStay.lng]} zoom={14} height="200px" />
+              </div>
+              <div className="p-6">
+                <h4 className="mb-4 text-sm">Book Your Stay</h4>
+                <div className="mb-3"><label className="block text-xs font-semibold mb-1">Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} min={new Date().toISOString().split("T")[0]} className="w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+                <div className="mb-3"><label className="block text-xs font-semibold mb-1">Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} min={checkIn} className="w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+                {nights > 0 && (
+                  <div className="bg-background rounded-lg p-4 mb-4">
+                    <div className="text-[13px] text-muted-foreground mb-2">Price Breakdown</div>
+                    <div className="flex justify-between text-[13px] mb-1.5"><span>Rs. {(selectedStay.pricePerNight * roomTypes[roomType].mult).toLocaleString()} × {nights} nights</span><span>Rs. {(selectedStay.pricePerNight * roomTypes[roomType].mult * nights).toLocaleString()}</span></div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1.5"><span>Taxes (10%)</span><span>Rs. {Math.round(selectedStay.pricePerNight * roomTypes[roomType].mult * nights * 0.1).toLocaleString()}</span></div>
+                    <div className="h-px bg-border my-2" />
+                    <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-sapphire">Rs. {Math.round(selectedStay.pricePerNight * roomTypes[roomType].mult * nights * 1.1).toLocaleString()}</span></div>
+                  </div>
+                )}
+                <button onClick={() => { if (!checkIn || !checkOut) { showToast("Please select dates.", "error"); return; } showToast("Booking confirmed!", "success"); setSelectedStay(null); }}
+                  className="w-full bg-sapphire hover:bg-sapphire-light text-pearl py-3 rounded-lg font-bold transition-all text-center">🏨 Confirm Booking</button>
+                <p className="text-[11px] text-muted-foreground text-center mt-2">Free cancellation up to 48 hours before check-in</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StaysPage;
