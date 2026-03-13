@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      inquiries: {
+        Row: {
+          created_at: string | null
+          id: string
+          listing_id: string
+          listing_type: string
+          message: string | null
+          owner_id: string | null
+          sender_email: string
+          sender_name: string
+          sender_phone: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          listing_id: string
+          listing_type: string
+          message?: string | null
+          owner_id?: string | null
+          sender_email: string
+          sender_name: string
+          sender_phone?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          listing_id?: string
+          listing_type?: string
+          message?: string | null
+          owner_id?: string | null
+          sender_email?: string
+          sender_name?: string
+          sender_phone?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
