@@ -24,6 +24,7 @@ const AuthPage = lazy(() => import("@/pages/AuthPage"));
 const SearchResultsPage = lazy(() => import("@/pages/SearchResultsPage"));
 const SocialPage = lazy(() => import("@/pages/SocialPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const ForBusinessPage = lazy(() => import("@/pages/ForBusinessPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
