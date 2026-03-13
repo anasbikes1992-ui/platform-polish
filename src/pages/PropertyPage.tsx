@@ -389,6 +389,7 @@ const PropertyPage = () => {
               </div>
               <div className="mb-3"><label className="block text-xs font-semibold mb-1">Description</label>
                 <textarea rows={3} placeholder="Describe what you're looking for…" className="w-full rounded-md border border-input px-3 py-2 text-sm resize-y" /></div>
+              <ImageUpload bucket="listings" maxFiles={1} onUpload={setWantedImages} label="Reference Photo (optional)" className="mb-3" />
               <div className="mb-4"><label className="block text-xs font-semibold mb-1">Contact Number *</label>
                 <input placeholder="+94 7X XXX XXXX" className="w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 text-xs text-muted-foreground">

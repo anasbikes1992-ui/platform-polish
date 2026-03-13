@@ -410,6 +410,20 @@ const DashboardPage = () => {
           <div className="max-w-lg">
             <h2 className="text-2xl mb-6">My Profile</h2>
             <div className="bg-card rounded-xl p-6 border border-border">
+              <div className="flex justify-center mb-5">
+                <ImageUpload
+                  bucket="avatars"
+                  maxFiles={1}
+                  circular
+                  existingUrls={profile?.avatar_url ? [profile.avatar_url] : []}
+                  onUpload={async (urls) => {
+                    if (urls.length > 0 && user) {
+                      await supabase.from("profiles").update({ avatar_url: urls[0] }).eq("id", user.id);
+                      showToast("Avatar updated!", "success");
+                    }
+                  }}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div><label className="block text-xs font-semibold mb-1">Full Name</label><input defaultValue={displayName} className="w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
                 <div><label className="block text-xs font-semibold mb-1">Email</label><input defaultValue={displayEmail} className="w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
