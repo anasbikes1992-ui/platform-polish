@@ -55,6 +55,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     { id: 3, title: "Special Offer", message: "Get 10% off on your first vehicle rental booking.", read: true, time: "1 day ago" },
   ]);
 
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewed[]>(() => {
+    try {
+      const stored = localStorage.getItem("pearl-hub-recent");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
   const showToast = useCallback((message: string, type: "success" | "error" | "warning" | "info" = "success") => {
     setToast({ message, type, id: Date.now() });
   }, []);
