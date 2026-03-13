@@ -123,4 +123,4 @@ export interface AppData {
   transactions: Transaction[];
 }
 
-export type UserRole = "customer" | "owner" | "broker" | "admin";
+export type UserRole = "customer" | "owner" | "broker" | "admin" | "stay_provider" | "event_organizer" | "sme";

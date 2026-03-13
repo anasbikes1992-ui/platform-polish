@@ -11,6 +11,21 @@ const Header = () => {
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pearl-hub-theme");
+      if (stored) return stored === "dark";
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("pearl-hub-theme", next ? "dark" : "light");
+  };
 
   const navItems = [
     { path: "/property", label: "Property", icon: "🏘️" },
@@ -90,8 +105,10 @@ const Header = () => {
             )}
           </div>
 
-          {/* Globe icon */}
-          <button className="bg-white/[0.08] border border-white/15 text-pearl rounded-md p-2 text-sm">🌐</button>
+          {/* Dark mode toggle */}
+          <button onClick={toggleDarkMode} className="bg-white/[0.08] border border-white/15 text-pearl rounded-md p-2 text-sm" title={darkMode ? "Light mode" : "Dark mode"}>
+            {darkMode ? "☀️" : "🌙"}
+          </button>
 
           {/* Role Switcher - only show when logged in or for demo */}
           <select value={currentUser} onChange={e => setCurrentUser(e.target.value as UserRole)}
@@ -99,6 +116,9 @@ const Header = () => {
             <option value="customer">👤 Customer</option>
             <option value="owner">🏠 Owner</option>
             <option value="broker">🏢 Broker</option>
+            <option value="stay_provider">🏨 Stay Provider</option>
+            <option value="event_organizer">🎭 Event Organizer</option>
+            <option value="sme">🏪 SME</option>
             <option value="admin">👑 Admin</option>
           </select>
 
@@ -132,6 +152,9 @@ const Header = () => {
                 <option value="customer">👤 Customer</option>
                 <option value="owner">🏠 Owner</option>
                 <option value="broker">🏢 Broker</option>
+                <option value="stay_provider">🏨 Stay Provider</option>
+                <option value="event_organizer">🎭 Event Organizer</option>
+                <option value="sme">🏪 SME</option>
                 <option value="admin">👑 Admin</option>
               </select>
               <button onClick={() => { handleAuthAction(); setMobileMenuOpen(false); }}
