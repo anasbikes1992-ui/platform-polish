@@ -116,6 +116,9 @@ const Header = () => {
             <option value="customer">👤 Customer</option>
             <option value="owner">🏠 Owner</option>
             <option value="broker">🏢 Broker</option>
+            <option value="stay_provider">🏨 Stay Provider</option>
+            <option value="event_organizer">🎭 Event Organizer</option>
+            <option value="sme">🏪 SME</option>
             <option value="admin">👑 Admin</option>
           </select>
 
