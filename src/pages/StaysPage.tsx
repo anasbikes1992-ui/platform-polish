@@ -211,7 +211,9 @@ const StaysPage = () => {
                     if (!checkIn || !checkOut) { showToast("Please select dates.", "error"); return; }
                     setShowPayment(true);
                   }}
-                    className="w-full bg-sapphire hover:bg-sapphire-light text-pearl py-3 rounded-lg font-bold transition-all text-center">💳 Book & Pay via LankaPay</button>
+                    className="w-full bg-sapphire hover:bg-sapphire-light text-pearl py-3 rounded-lg font-bold transition-all text-center mb-2">💳 Book & Pay via LankaPay</button>
+                  <button onClick={() => setShowInquiry(true)}
+                    className="w-full border border-sapphire text-sapphire py-2.5 rounded-lg font-bold transition-all text-center hover:bg-sapphire/5">📩 Enquire First</button>
                   <p className="text-[11px] text-muted-foreground text-center mt-2">Free cancellation up to 48 hours before check-in</p>
                 </div>
               </div>
