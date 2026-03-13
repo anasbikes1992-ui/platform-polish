@@ -88,6 +88,12 @@ const PropertyPage = () => {
           </button>
         </div>
       </div>
+      <TrustBanner stats={[
+        { value: "6,240+", label: "Properties", icon: "🏘️" },
+        { value: "890+", label: "Verified Owners", icon: "✓" },
+        { value: "Rs. 3.9M", label: "Transacted", icon: "💰" },
+        { value: "4.8★", label: "Avg Rating", icon: "⭐" },
+      ]} />
 
       {activeTab === "listings" && (
         <>
