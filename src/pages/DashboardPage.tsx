@@ -39,6 +39,7 @@ const DashboardPage = () => {
       { id: "promos", label: "Promo Codes", icon: "🎁" },
       { id: "revenue", label: "Revenue", icon: "💰" },
       { id: "terms", label: "Terms & Conditions", icon: "📄" },
+      { id: "compliance", label: "Compliance", icon: "📋" },
       { id: "profile", label: "Profile", icon: "👤" },
     ],
     broker: [
