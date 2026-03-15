@@ -74,6 +74,7 @@ const DashboardPage = () => {
       { id: "rates", label: "Rate Management", icon: "⚙️" },
       { id: "pricing", label: "Fees & Pricing", icon: "💳" },
       { id: "revenue", label: "Revenue", icon: "💰" },
+      { id: "compliance", label: "Compliance", icon: "📋" },
       { id: "profile", label: "Profile", icon: "👤" },
     ],
     event_organizer: [
