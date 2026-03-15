@@ -63,6 +63,7 @@ const DashboardPage = () => {
       { id: "all_listings", label: "All Listings", icon: "🏘️" },
       { id: "transactions", label: "Transactions", icon: "💳" },
       { id: "commissions", label: "Commissions", icon: "💹" },
+      { id: "compliance", label: "Compliance", icon: "📋" },
       { id: "settings", label: "Settings", icon: "⚙️" },
     ],
     stay_provider: [
