@@ -57,7 +57,9 @@ const VehiclesPage = () => {
 
   const vehicleTypes = [{ id: "all", label: "All" }, { id: "car", label: "Cars" }, { id: "van", label: "Vans" }, { id: "jeep", label: "Jeeps" }, { id: "bus", label: "Buses" }, { id: "luxury_coach", label: "Luxury Coach" }];
 
-  const filtered = data.vehicles.filter(v => {
+  const allVehicles = [...dbAsVehicles, ...data.vehicles];
+
+  const filtered = allVehicles.filter(v => {
     if (filter.type !== "all" && v.type !== filter.type) return false;
     if (filter.driver !== "all" && v.driver !== filter.driver) return false;
     if (filter.location && !v.location.toLowerCase().includes(filter.location.toLowerCase())) return false;
