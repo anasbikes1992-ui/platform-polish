@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LeafletMap from "@/components/LeafletMap";
@@ -8,12 +8,42 @@ import TrustBanner from "@/components/TrustBanner";
 import ShareButtons from "@/components/ShareButtons";
 import ReviewSection from "@/components/ReviewSection";
 import ComparisonTool from "@/components/ComparisonTool";
+import StayListingModal, { StayListing } from "@/components/StayListingModal";
 import { Stay } from "@/types/pearl-hub";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const isUrl = (s: string) => s.startsWith("http");
 
 const StaysPage = () => {
   const { data, showToast, addRecentlyViewed, addToCompare, compareItems } = useAppContext();
+  const { user } = useAuth();
+  const [dbListings, setDbListings] = useState<StayListing[]>([]);
+  const [showListModal, setShowListModal] = useState(false);
+  const [editListing, setEditListing] = useState<StayListing | null>(null);
+
+  const fetchListings = useCallback(async () => {
+    const { data: rows } = await supabase.from("stays_listings").select("*").order("created_at", { ascending: false });
+    if (rows) setDbListings(rows as unknown as StayListing[]);
+  }, []);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  const deleteListing = async (id: string) => {
+    await supabase.from("stays_listings").delete().eq("id", id);
+    showToast("Listing deleted", "success");
+    fetchListings();
+  };
+
+  // Merge DB listings into Stay[] format
+  const dbAsStays: Stay[] = dbListings.map(l => ({
+    id: l.id, type: l.type, stars: l.stars, name: l.title, location: l.location,
+    lat: Number(l.lat), lng: Number(l.lng), pricePerNight: Number(l.price_per_night),
+    rooms: l.rooms, rating: 0, image: l.images?.[0] || "🏨",
+    amenities: l.amenities || [], approved: l.approved, description: l.description || "",
+  }));
   const [filter, setFilter] = useState({ type: "all", maxPrice: "", location: "", minRating: "0", amenity: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [selectedStay, setSelectedStay] = useState<Stay | null>(null);
