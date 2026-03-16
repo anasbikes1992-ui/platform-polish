@@ -149,6 +149,25 @@ const VehiclesPage = () => {
                     <div className="w-full h-full bg-gradient-to-br from-ruby/10 to-ruby/[0.03] flex items-center justify-center text-5xl">{v.image}</div>
                   )}
                   <span className="absolute top-2.5 left-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-ruby/10 text-ruby capitalize backdrop-blur-sm">{v.type.replace("_", " ")}</span>
+                  {user && dbListings.some(l => l.id === v.id && l.user_id === user.id) && (
+                    <div className="absolute bottom-2.5 left-2.5 flex gap-1">
+                      <button onClick={e => { e.stopPropagation(); setEditListing(dbListings.find(l => l.id === v.id)!); setShowListModal(true); }}
+                        className="w-7 h-7 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all" title="Edit">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button onClick={e => e.stopPropagation()} className="w-7 h-7 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all" title="Delete">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={e => e.stopPropagation()}>
+                          <AlertDialogHeader><AlertDialogTitle>Delete this listing?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteListing(v.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                   <span className={`absolute top-2.5 right-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-sm ${v.driver === "included" ? "bg-emerald/10 text-emerald" : "bg-pearl-dark text-muted-foreground"}`}>
                     {v.driver === "included" ? "👨‍✈️ Driver Included" : "🔑 Self Drive"}
                   </span>
