@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LankaPayModal from "@/components/LankaPayModal";
@@ -6,12 +6,44 @@ import InquiryModal from "@/components/InquiryModal";
 import TrustBanner from "@/components/TrustBanner";
 import ShareButtons from "@/components/ShareButtons";
 import ReviewSection from "@/components/ReviewSection";
+import EventListingModal, { EventListing } from "@/components/EventListingModal";
 import { PearlEvent } from "@/types/pearl-hub";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const isUrl = (s: string) => s.startsWith("http");
 
 const EventsPage = () => {
   const { data, showToast, addRecentlyViewed } = useAppContext();
+  const { user } = useAuth();
+  const [dbListings, setDbListings] = useState<EventListing[]>([]);
+  const [showListModal, setShowListModal] = useState(false);
+  const [editListing, setEditListing] = useState<EventListing | null>(null);
+
+  const fetchListings = useCallback(async () => {
+    const { data: rows } = await supabase.from("events_listings").select("*").order("created_at", { ascending: false });
+    if (rows) setDbListings(rows as unknown as EventListing[]);
+  }, []);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  const deleteListing = async (id: string) => {
+    await supabase.from("events_listings").delete().eq("id", id);
+    showToast("Event deleted", "success");
+    fetchListings();
+  };
+
+  const dbAsEvents: PearlEvent[] = dbListings.map(l => ({
+    id: l.id, category: l.category, title: l.title, venue: l.venue, location: l.location || l.venue,
+    lat: Number(l.lat), lng: Number(l.lng), date: l.event_date, time: l.event_time,
+    image: l.images?.[0] || "🎭",
+    prices: { standard: Number(l.price_standard), premium: Number(l.price_premium), vip: Number(l.price_vip) },
+    seats: { rows: l.seat_rows, cols: l.seat_cols, booked: [] },
+    totalSeats: l.total_seats, availableSeats: l.total_seats,
+    description: l.description || "",
+  }));
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<PearlEvent | null>(null);
   const [ticketType, setTicketType] = useState("standard");
