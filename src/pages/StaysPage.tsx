@@ -321,6 +321,13 @@ const StaysPage = () => {
       )}
 
       <ComparisonTool />
+
+      <StayListingModal
+        open={showListModal}
+        onClose={() => { setShowListModal(false); setEditListing(null); }}
+        onSuccess={() => { fetchListings(); showToast(editListing ? "Stay updated!" : "Stay published!", "success"); }}
+        editData={editListing}
+      />
     </div>
   );
 };
