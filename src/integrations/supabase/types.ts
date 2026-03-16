@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      events_listings: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          event_date: string
+          event_time: string
+          id: string
+          images: string[] | null
+          lat: number | null
+          lng: number | null
+          location: string
+          price_premium: number | null
+          price_standard: number | null
+          price_vip: number | null
+          seat_cols: number | null
+          seat_rows: number | null
+          title: string
+          total_seats: number | null
+          updated_at: string
+          user_id: string
+          venue: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_time?: string
+          id?: string
+          images?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          location?: string
+          price_premium?: number | null
+          price_standard?: number | null
+          price_vip?: number | null
+          seat_cols?: number | null
+          seat_rows?: number | null
+          title: string
+          total_seats?: number | null
+          updated_at?: string
+          user_id: string
+          venue?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_time?: string
+          id?: string
+          images?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          location?: string
+          price_premium?: number | null
+          price_standard?: number | null
+          price_vip?: number | null
+          seat_cols?: number | null
+          seat_rows?: number | null
+          title?: string
+          total_seats?: number | null
+          updated_at?: string
+          user_id?: string
+          venue?: string
+        }
+        Relationships: []
+      }
       inquiries: {
         Row: {
           created_at: string | null
@@ -158,6 +227,63 @@ export type Database = {
         }
         Relationships: []
       }
+      stays_listings: {
+        Row: {
+          amenities: string[] | null
+          approved: boolean | null
+          created_at: string
+          description: string | null
+          id: string
+          images: string[] | null
+          lat: number | null
+          lng: number | null
+          location: string
+          price_per_night: number
+          rooms: number | null
+          stars: number | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          approved?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          location?: string
+          price_per_night?: number
+          rooms?: number | null
+          stars?: number | null
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amenities?: string[] | null
+          approved?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          location?: string
+          price_per_night?: number
+          rooms?: number | null
+          stars?: number | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -173,6 +299,69 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicles_listings: {
+        Row: {
+          ac: boolean | null
+          created_at: string
+          driver: string | null
+          fuel: string | null
+          id: string
+          images: string[] | null
+          lat: number | null
+          lng: number | null
+          location: string
+          make: string
+          model: string
+          price: number
+          price_unit: string
+          seats: number | null
+          type: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          ac?: boolean | null
+          created_at?: string
+          driver?: string | null
+          fuel?: string | null
+          id?: string
+          images?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          location?: string
+          make: string
+          model: string
+          price?: number
+          price_unit?: string
+          seats?: number | null
+          type?: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          ac?: boolean | null
+          created_at?: string
+          driver?: string | null
+          fuel?: string | null
+          id?: string
+          images?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          location?: string
+          make?: string
+          model?: string
+          price?: number
+          price_unit?: string
+          seats?: number | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
         }
         Relationships: []
       }

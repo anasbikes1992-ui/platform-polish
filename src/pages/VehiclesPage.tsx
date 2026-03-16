@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
@@ -9,13 +9,42 @@ import TrustBanner from "@/components/TrustBanner";
 import ShareButtons from "@/components/ShareButtons";
 import ReviewSection from "@/components/ReviewSection";
 import RealTimeTracker from "@/components/RealTimeTracker";
+import VehicleListingModal, { VehicleListing } from "@/components/VehicleListingModal";
 import { Vehicle } from "@/types/pearl-hub";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const isUrl = (s: string) => s.startsWith("http");
 
 const VehiclesPage = () => {
   const { data, showToast, addRecentlyViewed } = useAppContext();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [dbListings, setDbListings] = useState<VehicleListing[]>([]);
+  const [showListModal, setShowListModal] = useState(false);
+  const [editListing, setEditListing] = useState<VehicleListing | null>(null);
+
+  const fetchListings = useCallback(async () => {
+    const { data: rows } = await supabase.from("vehicles_listings").select("*").order("created_at", { ascending: false });
+    if (rows) setDbListings(rows as unknown as VehicleListing[]);
+  }, []);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  const deleteListing = async (id: string) => {
+    await supabase.from("vehicles_listings").delete().eq("id", id);
+    showToast("Listing deleted", "success");
+    fetchListings();
+  };
+
+  const dbAsVehicles: Vehicle[] = dbListings.map(l => ({
+    id: l.id, type: l.type, make: l.make, model: l.model, year: l.year,
+    price: Number(l.price), priceUnit: l.price_unit, seats: l.seats, ac: l.ac,
+    driver: l.driver, location: l.location, lat: Number(l.lat), lng: Number(l.lng),
+    image: l.images?.[0] || "🚗", fuel: l.fuel, rating: 0, trips: 0,
+  }));
   const [filter, setFilter] = useState({ type: "all", driver: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [selected, setSelected] = useState<Vehicle | null>(null);
@@ -28,7 +57,9 @@ const VehiclesPage = () => {
 
   const vehicleTypes = [{ id: "all", label: "All" }, { id: "car", label: "Cars" }, { id: "van", label: "Vans" }, { id: "jeep", label: "Jeeps" }, { id: "bus", label: "Buses" }, { id: "luxury_coach", label: "Luxury Coach" }];
 
-  const filtered = data.vehicles.filter(v => {
+  const allVehicles = [...dbAsVehicles, ...data.vehicles];
+
+  const filtered = allVehicles.filter(v => {
     if (filter.type !== "all" && v.type !== filter.type) return false;
     if (filter.driver !== "all" && v.driver !== filter.driver) return false;
     if (filter.location && !v.location.toLowerCase().includes(filter.location.toLowerCase())) return false;
@@ -66,7 +97,15 @@ const VehiclesPage = () => {
             <h1 className="text-pearl text-3xl">Rent a Vehicle</h1>
             <p className="text-pearl/75 mt-1.5">Cars • Vans • Jeeps • Buses • Luxury Coaches</p>
           </div>
-          <button onClick={() => navigate("/terms")} className="bg-white/10 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/20 transition-all">📄 Supplier T&C</button>
+          <div className="flex gap-2">
+            {user && (
+              <button onClick={() => { setEditListing(null); setShowListModal(true); }}
+                className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/25 transition-all">
+                <PlusCircle className="w-4 h-4" /> List a Vehicle
+              </button>
+            )}
+            <button onClick={() => navigate("/terms")} className="bg-white/10 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/20 transition-all">📄 Supplier T&C</button>
+          </div>
         </div>
       </div>
       <TrustBanner stats={[
@@ -110,6 +149,25 @@ const VehiclesPage = () => {
                     <div className="w-full h-full bg-gradient-to-br from-ruby/10 to-ruby/[0.03] flex items-center justify-center text-5xl">{v.image}</div>
                   )}
                   <span className="absolute top-2.5 left-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-ruby/10 text-ruby capitalize backdrop-blur-sm">{v.type.replace("_", " ")}</span>
+                  {user && dbListings.some(l => l.id === v.id && l.user_id === user.id) && (
+                    <div className="absolute bottom-2.5 left-2.5 flex gap-1">
+                      <button onClick={e => { e.stopPropagation(); setEditListing(dbListings.find(l => l.id === v.id)!); setShowListModal(true); }}
+                        className="w-7 h-7 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all" title="Edit">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button onClick={e => e.stopPropagation()} className="w-7 h-7 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all" title="Delete">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={e => e.stopPropagation()}>
+                          <AlertDialogHeader><AlertDialogTitle>Delete this listing?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteListing(v.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                   <span className={`absolute top-2.5 right-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-sm ${v.driver === "included" ? "bg-emerald/10 text-emerald" : "bg-pearl-dark text-muted-foreground"}`}>
                     {v.driver === "included" ? "👨‍✈️ Driver Included" : "🔑 Self Drive"}
                   </span>
@@ -317,6 +375,13 @@ const VehiclesPage = () => {
           onClose={() => { setShowTracker(false); setTrackerVehicle(null); }}
         />
       )}
+
+      <VehicleListingModal
+        open={showListModal}
+        onClose={() => { setShowListModal(false); setEditListing(null); }}
+        onSuccess={() => { fetchListings(); showToast(editListing ? "Vehicle updated!" : "Vehicle published!", "success"); }}
+        editData={editListing}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LankaPayModal from "@/components/LankaPayModal";
@@ -6,12 +6,44 @@ import InquiryModal from "@/components/InquiryModal";
 import TrustBanner from "@/components/TrustBanner";
 import ShareButtons from "@/components/ShareButtons";
 import ReviewSection from "@/components/ReviewSection";
+import EventListingModal, { EventListing } from "@/components/EventListingModal";
 import { PearlEvent } from "@/types/pearl-hub";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const isUrl = (s: string) => s.startsWith("http");
 
 const EventsPage = () => {
   const { data, showToast, addRecentlyViewed } = useAppContext();
+  const { user } = useAuth();
+  const [dbListings, setDbListings] = useState<EventListing[]>([]);
+  const [showListModal, setShowListModal] = useState(false);
+  const [editListing, setEditListing] = useState<EventListing | null>(null);
+
+  const fetchListings = useCallback(async () => {
+    const { data: rows } = await supabase.from("events_listings").select("*").order("created_at", { ascending: false });
+    if (rows) setDbListings(rows as unknown as EventListing[]);
+  }, []);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  const deleteListing = async (id: string) => {
+    await supabase.from("events_listings").delete().eq("id", id);
+    showToast("Event deleted", "success");
+    fetchListings();
+  };
+
+  const dbAsEvents: PearlEvent[] = dbListings.map(l => ({
+    id: l.id, category: l.category, title: l.title, venue: l.venue, location: l.location || l.venue,
+    lat: Number(l.lat), lng: Number(l.lng), date: l.event_date, time: l.event_time,
+    image: l.images?.[0] || "🎭",
+    prices: { standard: Number(l.price_standard), premium: Number(l.price_premium), vip: Number(l.price_vip) },
+    seats: { rows: l.seat_rows, cols: l.seat_cols, booked: [] },
+    totalSeats: l.total_seats, availableSeats: l.total_seats,
+    description: l.description || "",
+  }));
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<PearlEvent | null>(null);
   const [ticketType, setTicketType] = useState("standard");
@@ -25,7 +57,8 @@ const EventsPage = () => {
 
   const eventCategories = [{ id: "all", label: "All Events" }, { id: "cinema", label: "🎬 Cinema" }, { id: "concert", label: "🎵 Concerts" }, { id: "sports", label: "🏏 Sports" }];
 
-  const filtered = data.events.filter(e => filter === "all" || e.category === filter);
+  const allEvents = [...dbAsEvents, ...data.events];
+  const filtered = allEvents.filter(e => filter === "all" || e.category === filter);
 
   const toggleSeat = (idx: number) => {
     if (!selected || selected.seats.booked.includes(idx)) return;
@@ -45,10 +78,18 @@ const EventsPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="py-10" style={{ background: "linear-gradient(135deg, hsl(256 57% 29%), hsl(256 57% 12%))" }}>
-        <div className="container">
-          <div className="inline-flex items-center gap-1.5 bg-white/15 text-pearl text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-2">🎭 Events & Entertainment</div>
-          <h1 className="text-pearl text-3xl">Discover Events</h1>
-          <p className="text-pearl/75 mt-1.5">Cinema • Concerts • Sports • QR-Coded Tickets</p>
+        <div className="container flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 bg-white/15 text-pearl text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-2">🎭 Events & Entertainment</div>
+            <h1 className="text-pearl text-3xl">Discover Events</h1>
+            <p className="text-pearl/75 mt-1.5">Cinema • Concerts • Sports • QR-Coded Tickets</p>
+          </div>
+          {user && (
+            <button onClick={() => { setEditListing(null); setShowListModal(true); }}
+              className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-white/25 transition-all">
+              <PlusCircle className="w-4 h-4" /> Create Event
+            </button>
+          )}
         </div>
       </div>
       <TrustBanner stats={[
@@ -99,6 +140,25 @@ const EventsPage = () => {
                   <span className="text-xs font-bold px-3 py-1.5 rounded-md text-pearl" style={{ background: "hsl(256 57% 29%)" }}>Book Now</span>
                   <button onClick={(e) => { e.stopPropagation(); setSelected(evt); setShowInquiry(true); }}
                     className="text-xs font-bold px-3 py-1.5 rounded-md border border-indigo text-indigo hover:bg-indigo/5">📩</button>
+                  {user && dbListings.some(l => l.id === evt.id && l.user_id === user.id) && (
+                    <>
+                      <button onClick={e => { e.stopPropagation(); setEditListing(dbListings.find(l => l.id === evt.id)!); setShowListModal(true); }}
+                        className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all" title="Edit">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button onClick={e => e.stopPropagation()} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all" title="Delete">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={e => e.stopPropagation()}>
+                          <AlertDialogHeader><AlertDialogTitle>Delete this event?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteListing(evt.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -306,6 +366,13 @@ const EventsPage = () => {
           listingTitle={selected.title}
         />
       )}
+
+      <EventListingModal
+        open={showListModal}
+        onClose={() => { setShowListModal(false); setEditListing(null); }}
+        onSuccess={() => { fetchListings(); showToast(editListing ? "Event updated!" : "Event published!", "success"); }}
+        editData={editListing}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import LeafletMap from "@/components/LeafletMap";
@@ -8,12 +8,42 @@ import TrustBanner from "@/components/TrustBanner";
 import ShareButtons from "@/components/ShareButtons";
 import ReviewSection from "@/components/ReviewSection";
 import ComparisonTool from "@/components/ComparisonTool";
+import StayListingModal, { StayListing } from "@/components/StayListingModal";
 import { Stay } from "@/types/pearl-hub";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const isUrl = (s: string) => s.startsWith("http");
 
 const StaysPage = () => {
   const { data, showToast, addRecentlyViewed, addToCompare, compareItems } = useAppContext();
+  const { user } = useAuth();
+  const [dbListings, setDbListings] = useState<StayListing[]>([]);
+  const [showListModal, setShowListModal] = useState(false);
+  const [editListing, setEditListing] = useState<StayListing | null>(null);
+
+  const fetchListings = useCallback(async () => {
+    const { data: rows } = await supabase.from("stays_listings").select("*").order("created_at", { ascending: false });
+    if (rows) setDbListings(rows as unknown as StayListing[]);
+  }, []);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  const deleteListing = async (id: string) => {
+    await supabase.from("stays_listings").delete().eq("id", id);
+    showToast("Listing deleted", "success");
+    fetchListings();
+  };
+
+  // Merge DB listings into Stay[] format
+  const dbAsStays: Stay[] = dbListings.map(l => ({
+    id: l.id, type: l.type, stars: l.stars, name: l.title, location: l.location,
+    lat: Number(l.lat), lng: Number(l.lng), pricePerNight: Number(l.price_per_night),
+    rooms: l.rooms, rating: 0, image: l.images?.[0] || "🏨",
+    amenities: l.amenities || [], approved: l.approved, description: l.description || "",
+  }));
   const [filter, setFilter] = useState({ type: "all", maxPrice: "", location: "", minRating: "0", amenity: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [selectedStay, setSelectedStay] = useState<Stay | null>(null);
@@ -29,7 +59,9 @@ const StaysPage = () => {
 
   const stayTypes = [{ id: "all", label: "All" }, { id: "star_hotel", label: "Star Hotels" }, { id: "villa", label: "Villas" }, { id: "guest_house", label: "Guest Houses" }, { id: "hostel", label: "Hostels" }, { id: "lodge", label: "Lodges" }];
 
-  const filtered = data.stays.filter(s => {
+  const allStays = [...dbAsStays, ...data.stays];
+
+  const filtered = allStays.filter(s => {
     if (filter.type !== "all" && s.type !== filter.type) return false;
     if (filter.maxPrice && s.pricePerNight > parseInt(filter.maxPrice)) return false;
     if (filter.location && !s.location.toLowerCase().includes(filter.location.toLowerCase())) return false;
@@ -65,10 +97,18 @@ const StaysPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-gradient-to-br from-sapphire to-sapphire/70 py-10">
-        <div className="container">
-          <div className="inline-flex items-center gap-1.5 bg-white/15 text-pearl text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-2">🏨 Stays & Accommodation</div>
-          <h1 className="text-pearl text-3xl">Find Perfect Accommodation</h1>
-          <p className="text-pearl/75 mt-1.5">Hotels • Villas • Guest Houses • Hostels • Sri Lanka Tourism Board Approved</p>
+        <div className="container flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 bg-white/15 text-pearl text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-2">🏨 Stays & Accommodation</div>
+            <h1 className="text-pearl text-3xl">Find Perfect Accommodation</h1>
+            <p className="text-pearl/75 mt-1.5">Hotels • Villas • Guest Houses • Hostels • Sri Lanka Tourism Board Approved</p>
+          </div>
+          {user && (
+            <button onClick={() => { setEditListing(null); setShowListModal(true); }}
+              className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-white/25 transition-all">
+              <PlusCircle className="w-4 h-4" /> List a Stay
+            </button>
+          )}
         </div>
       </div>
       <TrustBanner stats={[
@@ -119,6 +159,25 @@ const StaysPage = () => {
                   {stay.stars > 0 && <span className="absolute top-2.5 left-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/15 text-gold-dark">{stay.stars}⭐</span>}
                   <button onClick={e => { e.stopPropagation(); addToCompare({ id: stay.id, title: stay.name, itemType: "stay", location: stay.location, price: stay.pricePerNight, priceUnit: "/night", rating: stay.rating, subtype: stay.type, details: `${stay.rooms} rooms • ${stay.stars}⭐`, features: stay.amenities.slice(0,3).join(", ") }); showToast(compareItems.length >= 3 ? "Max 3 items" : "Added to compare", compareItems.length >= 3 ? "warning" : "success"); }}
                     className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-card/90 flex items-center justify-center text-sm cursor-pointer" title="Compare">📊</button>
+                  {user && dbListings.some(l => l.id === stay.id && l.user_id === user.id) && (
+                    <div className="absolute top-2.5 right-2.5 flex gap-1">
+                      <button onClick={e => { e.stopPropagation(); setEditListing(dbListings.find(l => l.id === stay.id)!); setShowListModal(true); }}
+                        className="w-7 h-7 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all" title="Edit">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button onClick={e => e.stopPropagation()} className="w-7 h-7 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all" title="Delete">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={e => e.stopPropagation()}>
+                          <AlertDialogHeader><AlertDialogTitle>Delete this listing?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteListing(stay.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
                   <div className="font-display text-base font-bold mb-1">{stay.name}</div>
@@ -262,6 +321,13 @@ const StaysPage = () => {
       )}
 
       <ComparisonTool />
+
+      <StayListingModal
+        open={showListModal}
+        onClose={() => { setShowListModal(false); setEditListing(null); }}
+        onSuccess={() => { fetchListings(); showToast(editListing ? "Stay updated!" : "Stay published!", "success"); }}
+        editData={editListing}
+      />
     </div>
   );
 };
