@@ -59,7 +59,9 @@ const StaysPage = () => {
 
   const stayTypes = [{ id: "all", label: "All" }, { id: "star_hotel", label: "Star Hotels" }, { id: "villa", label: "Villas" }, { id: "guest_house", label: "Guest Houses" }, { id: "hostel", label: "Hostels" }, { id: "lodge", label: "Lodges" }];
 
-  const filtered = data.stays.filter(s => {
+  const allStays = [...dbAsStays, ...data.stays];
+
+  const filtered = allStays.filter(s => {
     if (filter.type !== "all" && s.type !== filter.type) return false;
     if (filter.maxPrice && s.pricePerNight > parseInt(filter.maxPrice)) return false;
     if (filter.location && !s.location.toLowerCase().includes(filter.location.toLowerCase())) return false;
