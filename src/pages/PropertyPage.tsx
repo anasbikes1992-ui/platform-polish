@@ -82,7 +82,7 @@ const PropertyPage = () => {
                 <button onClick={() => setShowListingModal(true)} className="bg-primary hover:bg-gold-light text-primary-foreground px-7 py-3 rounded-lg font-bold transition-all">➕ List Property</button>
               )}
             </div>
-            </div>
+          </div>
           </div>
         </div>
       </div>
