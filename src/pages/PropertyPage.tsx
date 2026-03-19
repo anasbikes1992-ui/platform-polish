@@ -227,7 +227,6 @@ const PropertyPage = () => {
                 ➕ Post Wanted Ad
               </button>
             )}
-            </button>
           </div>
 
           <div className="flex flex-col gap-4">
