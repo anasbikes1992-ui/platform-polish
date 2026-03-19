@@ -84,7 +84,6 @@ const PropertyPage = () => {
             </div>
           </div>
         </div>
-        </div>
       </div>
 
       <div className="bg-card border-b border-border">
