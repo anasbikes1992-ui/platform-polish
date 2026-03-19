@@ -15,9 +15,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const isUrl = (s: string) => s.startsWith("http");
 
+const LISTING_ROLES = ["event_organizer", "admin"];
+
 const EventsPage = () => {
   const { data, showToast, addRecentlyViewed } = useAppContext();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const canList = !!user && LISTING_ROLES.includes(profile?.role || "");
+  const isAdmin = profile?.role === "admin";
   const [dbListings, setDbListings] = useState<EventListing[]>([]);
   const [showListModal, setShowListModal] = useState(false);
   const [editListing, setEditListing] = useState<EventListing | null>(null);

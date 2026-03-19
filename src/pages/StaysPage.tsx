@@ -17,9 +17,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const isUrl = (s: string) => s.startsWith("http");
 
+const LISTING_ROLES = ["stay_provider", "admin"];
+
 const StaysPage = () => {
   const { data, showToast, addRecentlyViewed, addToCompare, compareItems } = useAppContext();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const canList = !!user && LISTING_ROLES.includes(profile?.role || "");
+  const isAdmin = profile?.role === "admin";
   const [dbListings, setDbListings] = useState<StayListing[]>([]);
   const [showListModal, setShowListModal] = useState(false);
   const [editListing, setEditListing] = useState<StayListing | null>(null);
