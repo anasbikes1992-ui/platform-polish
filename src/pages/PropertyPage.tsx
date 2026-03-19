@@ -221,9 +221,12 @@ const PropertyPage = () => {
               <h2 className="text-2xl mb-1">🔍 Wanted Properties</h2>
               <p className="text-muted-foreground text-sm">Buyers looking for specific properties — connect with them directly.</p>
             </div>
-            <button onClick={() => setShowWantedModal(true)}
-              className="bg-primary hover:bg-gold-light text-primary-foreground px-6 py-3 rounded-lg font-bold transition-all">
-              ➕ Post Wanted Ad
+            {canPostWanted && (
+              <button onClick={() => setShowWantedModal(true)}
+                className="bg-primary hover:bg-gold-light text-primary-foreground px-6 py-3 rounded-lg font-bold transition-all">
+                ➕ Post Wanted Ad
+              </button>
+            )}
             </button>
           </div>
 
