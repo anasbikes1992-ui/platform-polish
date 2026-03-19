@@ -88,7 +88,7 @@ const EventsPage = () => {
             <h1 className="text-pearl text-3xl">Discover Events</h1>
             <p className="text-pearl/75 mt-1.5">Cinema • Concerts • Sports • QR-Coded Tickets</p>
           </div>
-          {user && (
+          {canList && (
             <button onClick={() => { setEditListing(null); setShowListModal(true); }}
               className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-white/25 transition-all">
               <PlusCircle className="w-4 h-4" /> Create Event
