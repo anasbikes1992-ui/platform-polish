@@ -83,7 +83,7 @@ const PropertyPage = () => {
               )}
             </div>
           </div>
-          </div>
+        </div>
         </div>
       </div>
 
