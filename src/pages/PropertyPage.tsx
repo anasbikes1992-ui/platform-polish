@@ -26,8 +26,13 @@ interface WantedListing {
   date: string;
 }
 
+const LISTING_ROLES = ["owner", "broker", "admin"];
+
 const PropertyPage = () => {
   const { data, currentUser, showToast, favorites, toggleFavorite, addRecentlyViewed, addToCompare, compareItems } = useAppContext();
+  const { user, profile } = useAuth();
+  const canList = !!user && LISTING_ROLES.includes(profile?.role || "");
+  const canPostWanted = !!user; // all authenticated users
   const [filter, setFilter] = useState({ type: "all", minPrice: "", maxPrice: "", beds: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [selectedProp, setSelectedProp] = useState<Property | null>(null);
