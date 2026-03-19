@@ -26,8 +26,13 @@ interface WantedListing {
   date: string;
 }
 
+const LISTING_ROLES = ["owner", "broker", "admin"];
+
 const PropertyPage = () => {
   const { data, currentUser, showToast, favorites, toggleFavorite, addRecentlyViewed, addToCompare, compareItems } = useAppContext();
+  const { user, profile } = useAuth();
+  const canList = !!user && LISTING_ROLES.includes(profile?.role || "");
+  const canPostWanted = !!user; // all authenticated users
   const [filter, setFilter] = useState({ type: "all", minPrice: "", maxPrice: "", beds: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [selectedProp, setSelectedProp] = useState<Property | null>(null);
@@ -73,7 +78,9 @@ const PropertyPage = () => {
               <p className="text-pearl/75 mt-1.5">Sales • Rentals • Leases across Sri Lanka</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setShowListingModal(true)} className="bg-primary hover:bg-gold-light text-primary-foreground px-7 py-3 rounded-lg font-bold transition-all">➕ List Property</button>
+              {canList && (
+                <button onClick={() => setShowListingModal(true)} className="bg-primary hover:bg-gold-light text-primary-foreground px-7 py-3 rounded-lg font-bold transition-all">➕ List Property</button>
+              )}
             </div>
           </div>
         </div>
@@ -213,10 +220,12 @@ const PropertyPage = () => {
               <h2 className="text-2xl mb-1">🔍 Wanted Properties</h2>
               <p className="text-muted-foreground text-sm">Buyers looking for specific properties — connect with them directly.</p>
             </div>
-            <button onClick={() => setShowWantedModal(true)}
-              className="bg-primary hover:bg-gold-light text-primary-foreground px-6 py-3 rounded-lg font-bold transition-all">
-              ➕ Post Wanted Ad
-            </button>
+            {canPostWanted && (
+              <button onClick={() => setShowWantedModal(true)}
+                className="bg-primary hover:bg-gold-light text-primary-foreground px-6 py-3 rounded-lg font-bold transition-all">
+                ➕ Post Wanted Ad
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col gap-4">

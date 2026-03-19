@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import ShareButtons from "@/components/ShareButtons";
+import ImageUpload from "@/components/ImageUpload";
+import { Switch } from "@/components/ui/switch";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 
 interface SocialPost {
   id: string;
@@ -33,6 +37,17 @@ interface BusinessListing {
   fee: string;
 }
 
+interface SMEProduct {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  description: string;
+  images: string[];
+  active: boolean;
+  category: string;
+}
+
 const MOCK_POSTS: SocialPost[] = [
   { id: "SP1", author: "Kavinda Fernando", avatar: "👨", role: "Local Guide", content: "Just visited the stunning Nine Arches Bridge in Ella! 🌉 A must-see for anyone traveling to the hill country. The morning light is absolutely magical! #SriLankaTourism #Ella", likes: 234, comments: 45, shares: 18, time: "2 hours ago", type: "tourism", location: "Ella, Sri Lanka", verified: true, verifiedLabel: "STB Verified Guide" },
   { id: "SP2", author: "Ceylon Spice Garden", avatar: "🌿", role: "SME Business", content: "🌶️ Fresh organic spices from our garden in Matale! Visit us for authentic Ceylon cinnamon, pepper, and cardamom. Tourist groups welcome with guided tours. Book via Pearl Hub for 10% off!", likes: 89, comments: 12, shares: 7, time: "4 hours ago", type: "listing", location: "Matale", verified: true, verifiedLabel: "Verified Business" },
@@ -56,10 +71,25 @@ const VerifiedBadge = ({ label }: { label?: string }) => (
 
 const SocialPage = () => {
   const { showToast } = useAppContext();
+  const { user, profile } = useAuth();
+  const isSME = profile?.role === "sme";
+  const isAdmin = profile?.role === "admin";
+  const canPost = !!user; // all authenticated users can post
+
   const [activeTab, setActiveTab] = useState<"feed" | "explore" | "businesses" | "tourism">("feed");
   const [newPost, setNewPost] = useState("");
   const [posts, setPosts] = useState(MOCK_POSTS);
   const [showRegister, setShowRegister] = useState(false);
+
+  // SME Products State
+  const [smeProducts, setSmeProducts] = useState<SMEProduct[]>([
+    { id: "P1", name: "Ceylon Cinnamon Sticks (100g)", price: 850, quantity: 250, description: "Premium grade organic Ceylon cinnamon", images: [], active: true, category: "Spices" },
+    { id: "P2", name: "Black Pepper Whole (200g)", price: 1200, quantity: 180, description: "Hand-picked Matale black pepper", images: [], active: true, category: "Spices" },
+    { id: "P3", name: "Guided Spice Tour (per person)", price: 3500, quantity: 999, description: "2-hour guided tour of our spice garden", images: [], active: false, category: "Services" },
+  ]);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editProduct, setEditProduct] = useState<SMEProduct | null>(null);
+  const [productForm, setProductForm] = useState({ name: "", price: 0, quantity: 0, description: "", images: [] as string[], category: "Products" });
 
   const tabs = [
     { id: "feed" as const, label: "Feed", icon: "📱" },
@@ -69,13 +99,52 @@ const SocialPage = () => {
   ];
 
   const handlePost = () => {
-    if (!newPost.trim()) return;
-    setPosts([{ id: `SP${Date.now()}`, author: "You", avatar: "👤", role: "Member", content: newPost, likes: 0, comments: 0, shares: 0, time: "Just now", type: "status", verified: false }, ...posts]);
+    if (!newPost.trim() || !canPost) return;
+    setPosts([{
+      id: `SP${Date.now()}`, author: profile?.full_name || "You", avatar: "👤",
+      role: profile?.role === "sme" ? "SME Business" : "Member",
+      content: newPost, likes: 0, comments: 0, shares: 0, time: "Just now",
+      type: "status", verified: !!profile?.verified,
+      verifiedLabel: profile?.verified ? (profile?.role === "sme" ? "Verified SME" : "Verified Member") : undefined,
+    }, ...posts]);
     setNewPost("");
     showToast("Status posted!", "success");
   };
 
   const handleLike = (id: string) => setPosts(posts.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p));
+
+  const toggleProductActive = (id: string) => {
+    setSmeProducts(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+    showToast("Product status updated", "success");
+  };
+
+  const openProductModal = (product?: SMEProduct) => {
+    if (product) {
+      setEditProduct(product);
+      setProductForm({ name: product.name, price: product.price, quantity: product.quantity, description: product.description, images: product.images, category: product.category });
+    } else {
+      setEditProduct(null);
+      setProductForm({ name: "", price: 0, quantity: 0, description: "", images: [], category: "Products" });
+    }
+    setShowProductModal(true);
+  };
+
+  const saveProduct = () => {
+    if (!productForm.name || productForm.price <= 0) return;
+    if (editProduct) {
+      setSmeProducts(prev => prev.map(p => p.id === editProduct.id ? { ...p, ...productForm } : p));
+      showToast("Product updated!", "success");
+    } else {
+      setSmeProducts(prev => [...prev, { id: `P${Date.now()}`, ...productForm, active: true }]);
+      showToast("Product added!", "success");
+    }
+    setShowProductModal(false);
+  };
+
+  const deleteProduct = (id: string) => {
+    setSmeProducts(prev => prev.filter(p => p.id !== id));
+    showToast("Product removed", "success");
+  };
 
   const typeColors: Record<string, string> = { status: "bg-sapphire/10 text-sapphire", listing: "bg-emerald/10 text-emerald", tourism: "bg-primary/15 text-gold-dark", ad: "bg-ruby/10 text-ruby" };
 
@@ -98,17 +167,19 @@ const SocialPage = () => {
               {t.icon} {t.label}
             </button>
           ))}
-          <button onClick={() => setShowRegister(true)} className="ml-auto px-4 py-1.5 rounded-full text-[13px] font-bold text-pearl transition-all" style={{ background: "hsl(174 60% 35%)" }}>
-            🏪 List Your Business
-          </button>
+          {(isSME || isAdmin) && (
+            <button onClick={() => setShowRegister(true)} className="ml-auto px-4 py-1.5 rounded-full text-[13px] font-bold text-pearl transition-all" style={{ background: "hsl(174 60% 35%)" }}>
+              🏪 Register Business
+            </button>
+          )}
         </div>
       </div>
 
       <div className="container py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           <div>
-            {/* Post composer */}
-            {(activeTab === "feed" || activeTab === "explore") && (
+            {/* Post composer - all authenticated users */}
+            {canPost && (activeTab === "feed" || activeTab === "explore") && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-card/80 backdrop-blur-sm rounded-xl p-5 border border-border mb-6">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-lg flex-shrink-0">👤</div>
@@ -126,6 +197,12 @@ const SocialPage = () => {
                   </div>
                 </div>
               </motion.div>
+            )}
+
+            {!canPost && (activeTab === "feed" || activeTab === "explore") && (
+              <div className="bg-card/80 backdrop-blur-sm rounded-xl p-5 border border-border mb-6 text-center">
+                <p className="text-sm text-muted-foreground">🔒 Sign in to share updates and interact with the community</p>
+              </div>
             )}
 
             {/* Feed */}
@@ -159,30 +236,80 @@ const SocialPage = () => {
               </div>
             )}
 
-            {/* Businesses */}
+            {/* Businesses Directory */}
             {activeTab === "businesses" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {MOCK_BUSINESSES.map((biz, i) => (
-                  <motion.div key={biz.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="bg-card/80 backdrop-blur-sm rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all">
-                    <div className="h-28 flex items-center justify-center text-5xl relative" style={{ background: "linear-gradient(135deg, hsl(174 60% 35% / 0.1), transparent)" }}>
-                      {biz.image}
-                      {biz.featured && <span className="absolute top-2.5 right-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-gold-dark backdrop-blur-sm">⭐ Featured</span>}
+              <div>
+                {/* SME My Products Section */}
+                {(isSME || isAdmin) && (
+                  <div className="mb-8">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-bold">🛒 My Products & Services</h3>
+                      <button onClick={() => openProductModal()} className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-pearl" style={{ background: "hsl(174 60% 35%)" }}>
+                        <PlusCircle className="w-4 h-4" /> Add Product
+                      </button>
                     </div>
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-display text-base font-bold">{biz.name}</span>
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald/10 text-emerald">{biz.category}</span>
-                      </div>
-                      <div className="text-[13px] text-muted-foreground mb-2">📍 {biz.location} • ★ {biz.rating} ({biz.reviews})</div>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-3">{biz.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Listing: {biz.fee}</span>
-                        <button className="px-3 py-1 rounded text-xs font-bold text-pearl" style={{ background: "hsl(174 60% 35%)" }}>View</button>
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {smeProducts.map(product => (
+                        <div key={product.id} className={`bg-card/80 backdrop-blur-sm rounded-xl p-4 border transition-all ${product.active ? "border-border" : "border-border/50 opacity-60"}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-sm">{product.name}</span>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sapphire/10 text-sapphire">{product.category}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{product.description}</p>
+                            </div>
+                            <div className="flex items-center gap-2 ml-2">
+                              <Switch checked={product.active} onCheckedChange={() => toggleProductActive(product.id)} />
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                            <div className="flex gap-4">
+                              <span className="text-sm font-bold text-primary">Rs. {product.price.toLocaleString()}</span>
+                              <span className="text-xs text-muted-foreground">📦 {product.quantity} in stock</span>
+                            </div>
+                            <div className="flex gap-1">
+                              <button onClick={() => openProductModal(product)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all" title="Edit">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => deleteProduct(product.id)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all" title="Delete">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-[10px] font-bold">
+                            {product.active ? <span className="text-emerald">● Live</span> : <span className="text-muted-foreground">● Paused</span>}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </motion.div>
-                ))}
+                  </div>
+                )}
+
+                <h3 className="text-lg font-bold mb-4">🏪 Business Directory</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {MOCK_BUSINESSES.map((biz, i) => (
+                    <motion.div key={biz.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                      className="bg-card/80 backdrop-blur-sm rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all">
+                      <div className="h-28 flex items-center justify-center text-5xl relative" style={{ background: "linear-gradient(135deg, hsl(174 60% 35% / 0.1), transparent)" }}>
+                        {biz.image}
+                        {biz.featured && <span className="absolute top-2.5 right-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-gold-dark backdrop-blur-sm">⭐ Featured</span>}
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-display text-base font-bold">{biz.name}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald/10 text-emerald">{biz.category}</span>
+                        </div>
+                        <div className="text-[13px] text-muted-foreground mb-2">📍 {biz.location} • ★ {biz.rating} ({biz.reviews})</div>
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">{biz.description}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Listing: {biz.fee}</span>
+                          <button className="px-3 py-1 rounded text-xs font-bold text-pearl" style={{ background: "hsl(174 60% 35%)" }}>View</button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -219,7 +346,7 @@ const SocialPage = () => {
         </div>
       </div>
 
-      {/* Business Registration Modal */}
+      {/* Business Registration Modal - SME & Admin only */}
       {showRegister && (
         <div className="fixed inset-0 bg-obsidian/75 backdrop-blur-sm z-[1000] flex items-center justify-center p-5 fade-in" onClick={() => setShowRegister(false)}>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -241,6 +368,7 @@ const SocialPage = () => {
               <div className="mb-3"><label className="block text-xs font-semibold mb-1">Location *</label><input className="w-full rounded-md border border-input px-3 py-2 text-sm" placeholder="City / Area" /></div>
               <div className="mb-3"><label className="block text-xs font-semibold mb-1">Description</label><textarea rows={3} className="w-full rounded-md border border-input px-3 py-2 text-sm resize-y" /></div>
               <div className="mb-3"><label className="block text-xs font-semibold mb-1">Contact Phone</label><input className="w-full rounded-md border border-input px-3 py-2 text-sm" placeholder="+94 77 123 4567" /></div>
+              <ImageUpload bucket="listings" maxFiles={3} onUpload={() => {}} label="Business Photos" className="mb-3" />
               <div className="bg-background/80 backdrop-blur-sm rounded-lg p-4 mb-4 border border-border/50">
                 <h4 className="text-sm font-bold mb-2">💰 Listing Plans</h4>
                 <div className="grid grid-cols-3 gap-2">
@@ -255,6 +383,55 @@ const SocialPage = () => {
               </div>
               <button onClick={() => { showToast("Business listing submitted for review!", "success"); setShowRegister(false); }}
                 className="w-full text-pearl py-3 rounded-lg font-bold transition-all" style={{ background: "hsl(174 60% 35%)" }}>🚀 Submit Listing</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Product Add/Edit Modal - SME only */}
+      {showProductModal && (
+        <div className="fixed inset-0 bg-obsidian/75 backdrop-blur-sm z-[1000] flex items-center justify-center p-5" onClick={() => setShowProductModal(false)}>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-card/95 backdrop-blur-md rounded-2xl max-w-[500px] w-full max-h-[90vh] overflow-y-auto border border-border/50 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="px-7 py-5 flex justify-between items-center" style={{ background: "linear-gradient(135deg, hsl(174 60% 35%), hsl(174 60% 18%))" }}>
+              <h2 className="text-pearl text-lg">{editProduct ? "✏️ Edit Product" : "➕ Add Product / Service"}</h2>
+              <button onClick={() => setShowProductModal(false)} className="bg-white/15 border-none text-pearl w-8 h-8 rounded-full cursor-pointer hover:bg-white/25 transition-all">✕</button>
+            </div>
+            <div className="p-7 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1">Product / Service Name *</label>
+                <input value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })}
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm" placeholder="e.g. Ceylon Cinnamon 100g" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Category</label>
+                  <select value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })}
+                    className="w-full rounded-md border border-input px-3 py-2 text-sm bg-card">
+                    <option>Products</option><option>Services</option><option>Spices</option><option>Food</option><option>Tours</option><option>Handicrafts</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Price (Rs.) *</label>
+                  <input type="number" min={0} value={productForm.price} onChange={e => setProductForm({ ...productForm, price: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-md border border-input px-3 py-2 text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">Quantity / Stock</label>
+                <input type="number" min={0} value={productForm.quantity} onChange={e => setProductForm({ ...productForm, quantity: parseInt(e.target.value) || 0 })}
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">Description</label>
+                <textarea value={productForm.description} onChange={e => setProductForm({ ...productForm, description: e.target.value })}
+                  rows={3} className="w-full rounded-md border border-input px-3 py-2 text-sm resize-y" placeholder="Describe your product or service…" />
+              </div>
+              <ImageUpload bucket="listings" maxFiles={3} onUpload={urls => setProductForm({ ...productForm, images: urls })} existingUrls={productForm.images} label="Product Photos" />
+              <button onClick={saveProduct} disabled={!productForm.name || productForm.price <= 0}
+                className="w-full text-pearl py-3 rounded-lg font-bold transition-all disabled:opacity-50" style={{ background: "hsl(174 60% 35%)" }}>
+                {editProduct ? "💾 Update Product" : "➕ Add Product"}
+              </button>
             </div>
           </motion.div>
         </div>

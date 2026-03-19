@@ -15,9 +15,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const isUrl = (s: string) => s.startsWith("http");
 
+const LISTING_ROLES = ["event_organizer", "admin"];
+
 const EventsPage = () => {
   const { data, showToast, addRecentlyViewed } = useAppContext();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const canList = !!user && LISTING_ROLES.includes(profile?.role || "");
+  const isAdmin = profile?.role === "admin";
   const [dbListings, setDbListings] = useState<EventListing[]>([]);
   const [showListModal, setShowListModal] = useState(false);
   const [editListing, setEditListing] = useState<EventListing | null>(null);
@@ -84,7 +88,7 @@ const EventsPage = () => {
             <h1 className="text-pearl text-3xl">Discover Events</h1>
             <p className="text-pearl/75 mt-1.5">Cinema • Concerts • Sports • QR-Coded Tickets</p>
           </div>
-          {user && (
+          {canList && (
             <button onClick={() => { setEditListing(null); setShowListModal(true); }}
               className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-white/25 transition-all">
               <PlusCircle className="w-4 h-4" /> Create Event
@@ -140,7 +144,7 @@ const EventsPage = () => {
                   <span className="text-xs font-bold px-3 py-1.5 rounded-md text-pearl" style={{ background: "hsl(256 57% 29%)" }}>Book Now</span>
                   <button onClick={(e) => { e.stopPropagation(); setSelected(evt); setShowInquiry(true); }}
                     className="text-xs font-bold px-3 py-1.5 rounded-md border border-indigo text-indigo hover:bg-indigo/5">📩</button>
-                  {user && dbListings.some(l => l.id === evt.id && l.user_id === user.id) && (
+                  {user && (isAdmin || dbListings.some(l => l.id === evt.id && l.user_id === user.id)) && (
                     <>
                       <button onClick={e => { e.stopPropagation(); setEditListing(dbListings.find(l => l.id === evt.id)!); setShowListModal(true); }}
                         className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all" title="Edit">
