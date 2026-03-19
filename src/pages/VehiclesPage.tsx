@@ -102,7 +102,7 @@ const VehiclesPage = () => {
             <p className="text-pearl/75 mt-1.5">Cars • Vans • Jeeps • Buses • Luxury Coaches</p>
           </div>
           <div className="flex gap-2">
-            {user && (
+            {canList && (
               <button onClick={() => { setEditListing(null); setShowListModal(true); }}
                 className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-pearl px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/25 transition-all">
                 <PlusCircle className="w-4 h-4" /> List a Vehicle
